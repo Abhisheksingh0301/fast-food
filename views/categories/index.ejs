@@ -1,0 +1,107 @@
+<%- include('../partials/head') %>
+<%- include('../partials/sidebar') %>
+<div class="p-3 md:p-6">
+  <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+    <!-- Add Category -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 h-fit">
+      <h2 class="font-semibold text-gray-800 mb-4">Add Category</h2>
+      <form action="/categories" method="POST" class="space-y-3">
+        <!-- Emoji picker -->
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Icon (emoji)</label>
+          <div class="flex items-center gap-2 mb-2">
+            <div id="addEmojiPreview" class="w-10 h-10 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-2xl select-none">🍽️</div>
+            <input type="text" name="emoji" id="addEmojiInput" value="🍽️" maxlength="4"
+              class="w-20 border border-gray-200 rounded-lg px-3 py-2 text-sm text-center focus:outline-none focus:ring-2 focus:ring-orange-400"
+              oninput="document.getElementById('addEmojiPreview').textContent=this.value||'🍽️'">
+            <span class="text-xs text-gray-400">or pick →</span>
+          </div>
+          <%- include('../partials/_emoji_grid', { targetInput: 'addEmojiInput', targetPreview: 'addEmojiPreview' }) %>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Category Name</label>
+          <input type="text" name="name" required placeholder="e.g. Burgers"
+            class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <button type="submit" class="w-full bg-orange-500 hover:bg-orange-600 text-white font-medium py-2 rounded-lg text-sm transition-colors">
+          Add Category
+        </button>
+      </form>
+    </div>
+
+    <!-- Categories List -->
+    <div class="lg:col-span-2 bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">All Categories (<%= categories.length %>)</h2>
+      </div>
+      <div class="divide-y divide-gray-50">
+        <% if (categories.length === 0) { %>
+        <div class="py-10 text-center text-gray-400">No categories yet.</div>
+        <% } %>
+        <% categories.forEach(cat => { %>
+        <div class="flex items-center gap-3 px-5 py-3" id="cat-<%= cat.id %>">
+          <!-- Emoji display -->
+          <div class="w-9 h-9 rounded-xl bg-orange-50 flex items-center justify-center text-xl shrink-0 select-none" id="cat-emoji-display-<%= cat.id %>">
+            <%= cat.emoji || '🍽️' %>
+          </div>
+
+          <div class="flex-1">
+            <div class="font-medium text-gray-800 text-sm" id="cat-name-<%= cat.id %>"><%= cat.name %></div>
+            <div class="text-xs text-gray-400"><%= cat.item_count %> item(s)</div>
+          </div>
+
+          <!-- Edit form (hidden by default) -->
+          <form action="/categories/<%= cat.id %>/edit" method="POST"
+            class="hidden flex-col gap-2 w-full" id="edit-form-<%= cat.id %>">
+            <div class="flex items-center gap-2">
+              <div id="editEmojiPreview-<%= cat.id %>" class="w-9 h-9 rounded-xl bg-orange-50 border border-orange-200 flex items-center justify-center text-xl shrink-0 cursor-pointer"
+                onclick="document.getElementById('editEmojiPicker-<%= cat.id %>').classList.toggle('hidden')">
+                <%= cat.emoji || '🍽️' %>
+              </div>
+              <input type="text" name="emoji" id="editEmojiInput-<%= cat.id %>" value="<%= cat.emoji || '🍽️' %>" maxlength="4"
+                class="w-14 border border-gray-200 rounded px-2 py-1 text-sm text-center focus:outline-none focus:ring-1 focus:ring-orange-400"
+                oninput="document.getElementById('editEmojiPreview-<%= cat.id %>').textContent=this.value||'🍽️'">
+              <input type="text" name="name" value="<%= cat.name %>" required
+                class="flex-1 border border-gray-200 rounded px-2 py-1 text-xs focus:outline-none focus:ring-1 focus:ring-orange-400">
+              <button type="submit" class="bg-green-500 text-white text-xs px-2 py-1 rounded hover:bg-green-600">Save</button>
+              <button type="button" onclick="cancelEdit(<%= cat.id %>)" class="text-xs text-gray-500 hover:text-gray-700">✕</button>
+            </div>
+            <!-- Emoji picker for edit -->
+            <div id="editEmojiPicker-<%= cat.id %>" class="hidden">
+              <%- include('../partials/_emoji_grid', { targetInput: `editEmojiInput-${cat.id}`, targetPreview: `editEmojiPreview-${cat.id}` }) %>
+            </div>
+          </form>
+
+          <!-- Actions -->
+          <div class="flex gap-2 shrink-0" id="cat-actions-<%= cat.id %>">
+            <button onclick="startEdit(<%= cat.id %>)" class="text-xs text-blue-500 hover:text-blue-700 font-medium">Edit</button>
+            <form action="/categories/<%= cat.id %>?_method=DELETE" method="POST"
+              onsubmit="return confirm('Delete category?')">
+              <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+            </form>
+          </div>
+        </div>
+        <% }) %>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+function startEdit(id) {
+  document.getElementById(`edit-form-${id}`).classList.remove('hidden');
+  document.getElementById(`edit-form-${id}`).style.display = 'flex';
+  document.getElementById(`cat-actions-${id}`).style.display = 'none';
+  document.getElementById(`cat-name-${id}`).style.display = 'none';
+  document.getElementById(`cat-emoji-display-${id}`).style.display = 'none';
+}
+function cancelEdit(id) {
+  document.getElementById(`edit-form-${id}`).style.display = 'none';
+  document.getElementById(`cat-actions-${id}`).style.display = 'flex';
+  document.getElementById(`cat-name-${id}`).style.display = 'block';
+  document.getElementById(`cat-emoji-display-${id}`).style.display = 'flex';
+  document.getElementById(`editEmojiPicker-${id}`).classList.add('hidden');
+}
+</script>
+<%- include('../partials/footer') %>

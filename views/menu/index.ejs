@@ -1,0 +1,176 @@
+<%- include('../partials/head') %>
+<%- include('../partials/sidebar') %>
+<div class="p-6 space-y-4">
+
+  <!-- Add Item + Search Bar Row -->
+  <div class="flex flex-wrap gap-3 items-center">
+    <form action="/menu" method="GET" class="flex flex-wrap gap-2 w-full md:w-auto">
+      <input type="text" name="search" value="<%= query.search || '' %>" placeholder="Search items..."
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 w-48">
+      <select name="category" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <option value="">All Categories</option>
+        <% categories.forEach(c => { %>
+        <option value="<%= c.id %>" <%= query.category == c.id ? 'selected' : '' %>><%= c.name %></option>
+        <% }) %>
+      </select>
+      <select name="status" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <option value="">All Status</option>
+        <option value="active" <%= query.status === 'active' ? 'selected' : '' %>>Active</option>
+        <option value="inactive" <%= query.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+      </select>
+      <button type="submit" class="bg-gray-700 hover:bg-gray-800 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Filter</button>
+      <a href="/menu" class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
+    </form>
+    <button onclick="document.getElementById('addModal').classList.remove('hidden')"
+      class="ml-auto bg-orange-500 hover:bg-orange-600 text-white px-4 py-2 rounded-lg text-sm font-semibold transition-colors">
+      + Add Item
+    </button>
+  </div>
+
+  <!-- Items Table -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <table class="w-full text-sm">
+      <thead>
+        <tr class="text-xs text-gray-500 uppercase bg-gray-50 border-b border-gray-100">
+          <th class="text-left px-3 md:px-5 py-3">Item</th>
+          <th class="text-left px-3 md:px-5 py-3 hidden sm:table-cell">Category</th>
+          <th class="text-right px-3 md:px-5 py-3">Price</th>
+          <th class="text-right px-3 md:px-5 py-3 hidden md:table-cell">GST%</th>
+          <th class="text-center px-3 md:px-5 py-3 hidden sm:table-cell">Status</th>
+          <th class="text-center px-3 md:px-5 py-3">Actions</th>
+        </tr>
+      </thead>
+      <tbody class="divide-y divide-gray-50">
+        <% if (items.length === 0) { %>
+        <tr><td colspan="6" class="text-center py-10 text-gray-400">No items found.</td></tr>
+        <% } %>
+        <% items.forEach(item => { %>
+        <tr class="hover:bg-gray-50 transition-colors" id="row-<%= item.id %>">
+          <td class="px-3 md:px-5 py-3 font-medium text-gray-800 text-sm"><%= item.name %></td>
+          <td class="px-3 md:px-5 py-3 text-gray-500 text-xs hidden sm:table-cell"><%= item.category_name %></td>
+          <td class="px-3 md:px-5 py-3 text-right font-semibold text-gray-800 text-sm">₹<%= item.price.toFixed(2) %></td>
+          <td class="px-3 md:px-5 py-3 text-right text-gray-500 hidden md:table-cell"><%= item.gst %>%</td>
+          <td class="px-3 md:px-5 py-3 text-center hidden sm:table-cell">
+            <span class="px-2 py-0.5 rounded-full text-xs font-medium
+              <%= item.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500' %>">
+              <%= item.status %>
+            </span>
+          </td>
+          <td class="px-3 md:px-5 py-3 text-center">
+            <div class="flex justify-center gap-3">
+              <button onclick="openEdit(<%= JSON.stringify(item) %>)"
+                class="text-xs text-blue-500 hover:text-blue-700 font-medium">Edit</button>
+              <form action="/menu/<%= item.id %>?_method=DELETE" method="POST"
+                onsubmit="return confirm('Delete this item?')">
+                <button type="submit" class="text-xs text-red-500 hover:text-red-700 font-medium">Delete</button>
+              </form>
+            </div>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- Add Modal -->
+<div id="addModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-xl w-full max-w-md shadow-2xl">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="font-semibold">Add Menu Item</h3>
+      <button onclick="document.getElementById('addModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">&times;</button>
+    </div>
+    <form action="/menu" method="POST" class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Item Name</label>
+          <input type="text" name="name" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Category</label>
+          <select name="category_id" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <option value="">Select category</option>
+            <% categories.forEach(c => { %><option value="<%= c.id %>"><%= c.name %></option><% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Price (₹)</label>
+          <input type="number" name="price" min="0" step="0.01" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">GST (%)</label>
+          <input type="number" name="gst" min="0" max="28" step="0.01" value="5" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Status</label>
+          <select name="status" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Add Item</button>
+        <button type="button" onclick="document.getElementById('addModal').classList.add('hidden')"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div id="editModal" class="hidden fixed inset-0 bg-black/50 flex items-center justify-center z-50 p-4">
+  <div class="bg-white rounded-xl w-full max-w-md shadow-2xl">
+    <div class="px-5 py-4 border-b border-gray-100 flex items-center justify-between">
+      <h3 class="font-semibold">Edit Menu Item</h3>
+      <button onclick="document.getElementById('editModal').classList.add('hidden')" class="text-gray-400 hover:text-gray-600">&times;</button>
+    </div>
+    <form id="editForm" method="POST" class="p-5 space-y-3">
+      <div class="grid grid-cols-2 gap-3">
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Item Name</label>
+          <input type="text" name="name" id="editName" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Category</label>
+          <select name="category_id" id="editCategory" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <% categories.forEach(c => { %><option value="<%= c.id %>"><%= c.name %></option><% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">Price (₹)</label>
+          <input type="number" name="price" id="editPrice" min="0" step="0.01" required class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div>
+          <label class="block text-xs text-gray-600 mb-1">GST (%)</label>
+          <input type="number" name="gst" id="editGst" min="0" max="28" step="0.01" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+        </div>
+        <div class="col-span-2">
+          <label class="block text-xs text-gray-600 mb-1">Status</label>
+          <select name="status" id="editStatus" class="w-full border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+            <option value="active">Active</option>
+            <option value="inactive">Inactive</option>
+          </select>
+        </div>
+      </div>
+      <div class="flex gap-2 pt-1">
+        <button type="submit" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2 rounded-lg text-sm font-semibold transition-colors">Save Changes</button>
+        <button type="button" onclick="document.getElementById('editModal').classList.add('hidden')"
+          class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 py-2 rounded-lg text-sm font-medium transition-colors">Cancel</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script>
+function openEdit(item) {
+  document.getElementById('editForm').action = '/menu/' + item.id + '/edit';
+  document.getElementById('editName').value = item.name;
+  document.getElementById('editCategory').value = item.category_id;
+  document.getElementById('editPrice').value = item.price;
+  document.getElementById('editGst').value = item.gst;
+  document.getElementById('editStatus').value = item.status;
+  document.getElementById('editModal').classList.remove('hidden');
+}
+</script>
+<%- include('../partials/footer') %>

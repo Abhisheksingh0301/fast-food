@@ -1,0 +1,103 @@
+<%- include('../partials/head') %>
+<%- include('../partials/sidebar') %>
+<div class="p-6 space-y-4">
+
+  <!-- Filters -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-4">
+    <form action="/orders" method="GET" class="flex flex-wrap gap-3 items-end">
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Search</label>
+        <input type="text" name="q" value="<%= query.q || '' %>" placeholder="Order # / Name / Mobile"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 w-48">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">From Date</label>
+        <input type="date" name="from" value="<%= query.from || '' %>"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">To Date</label>
+        <input type="date" name="to" value="<%= query.to || '' %>"
+          class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+      </div>
+      <div>
+        <label class="block text-xs text-gray-500 mb-1">Payment</label>
+        <select name="payment" class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+          <option value="">All</option>
+          <option value="Cash" <%= query.payment === 'Cash' ? 'selected' : '' %>>Cash</option>
+          <option value="UPI" <%= query.payment === 'UPI' ? 'selected' : '' %>>UPI</option>
+          <option value="Card" <%= query.payment === 'Card' ? 'selected' : '' %>>Card</option>
+        </select>
+      </div>
+      <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">Search</button>
+      <a href="/orders" class="text-sm text-gray-500 hover:text-gray-700 py-2">Clear</a>
+    </form>
+  </div>
+
+  <!-- Table -->
+  <div class="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+    <div class="px-5 py-3 border-b border-gray-100 flex items-center justify-between">
+      <span class="font-semibold text-gray-800">Orders (<%= orders.length %>)</span>
+      <a href="/orders/new" class="bg-orange-500 hover:bg-orange-600 text-white px-4 py-1.5 rounded-lg text-xs font-semibold transition-colors">+ New Order</a>
+    </div>
+    <div class="overflow-x-auto">
+      <table class="w-full text-sm">
+        <thead>
+          <tr class="text-xs text-gray-500 uppercase bg-gray-50">
+            <th class="text-left px-3 md:px-5 py-3">Order #</th>
+            <th class="text-left px-3 md:px-5 py-3 hidden sm:table-cell">Customer</th>
+            <th class="text-left px-3 md:px-5 py-3 hidden lg:table-cell">Type</th>
+            <th class="text-left px-3 md:px-5 py-3">Payment</th>
+            <th class="text-right px-3 md:px-5 py-3">Total</th>
+            <th class="text-center px-3 md:px-5 py-3 hidden md:table-cell">Status</th>
+            <th class="text-right px-3 md:px-5 py-3 hidden sm:table-cell">Date/Time</th>
+            <th class="text-center px-3 md:px-5 py-3">Actions</th>
+          </tr>
+        </thead>
+        <tbody class="divide-y divide-gray-50">
+          <% if (orders.length === 0) { %>
+          <tr><td colspan="8" class="text-center py-10 text-gray-400">No orders found.</td></tr>
+          <% } %>
+          <% orders.forEach(o => { %>
+          <tr class="hover:bg-gray-50 transition-colors">
+            <td class="px-3 md:px-5 py-3 font-mono text-xs font-medium text-gray-700 max-w-[90px] truncate"><%= o.order_number %></td>
+            <td class="px-3 md:px-5 py-3 text-gray-600 text-xs hidden sm:table-cell">
+              <div><%= o.customer_name || '—' %></div>
+              <% if (o.mobile) { %><div class="text-gray-400"><%= o.mobile %></div><% } %>
+            </td>
+            <td class="px-3 md:px-5 py-3 text-xs text-gray-500 hidden lg:table-cell"><%= o.order_type %></td>
+            <td class="px-3 md:px-5 py-3">
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                <%= o.payment_method === 'Cash' ? 'bg-green-100 text-green-700' : o.payment_method === 'UPI' ? 'bg-blue-100 text-blue-700' : 'bg-purple-100 text-purple-700' %>">
+                <%= o.payment_method %>
+              </span>
+            </td>
+            <td class="px-3 md:px-5 py-3 text-right font-bold text-gray-800 text-xs md:text-sm">₹<%= o.total.toFixed(2) %></td>
+            <td class="px-3 md:px-5 py-3 text-center hidden md:table-cell">
+              <span class="px-2 py-0.5 rounded-full text-xs font-medium
+                <%= o.status === 'completed' ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-600' %>">
+                <%= o.status %>
+              </span>
+            </td>
+            <td class="px-3 md:px-5 py-3 text-right text-xs text-gray-400 hidden sm:table-cell">
+              <div><%= new Date(o.created_at).toLocaleDateString('en-IN') %></div>
+              <div><%= new Date(o.created_at).toLocaleTimeString('en-IN', {hour:'2-digit',minute:'2-digit'}) %></div>
+            </td>
+            <td class="px-3 md:px-5 py-3 text-center">
+              <div class="flex justify-center gap-2">
+                <a href="/orders/<%= o.id %>/receipt" class="text-xs text-orange-500 hover:text-orange-700 font-medium">Receipt</a>
+                <% if (locals.user && user && user.role === 'admin' && o.status === 'completed') { %>
+                <form action="/orders/<%= o.id %>/cancel" method="POST" onsubmit="return confirm('Cancel this order?')">
+                  <button type="submit" class="text-xs text-red-400 hover:text-red-600 font-medium">Cancel</button>
+                </form>
+                <% } %>
+              </div>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+<%- include('../partials/footer') %>

@@ -1,0 +1,20 @@
+<div class="grid grid-cols-8 gap-1 p-2 bg-gray-50 rounded-xl border border-gray-100">
+  <% const foodEmojis = [
+    '🍔','🍕','🍟','🌮','🌯','🥪','🥗','🍱',
+    '🍗','🍖','🥩','🍣','🍜','🍛','🍲','🥘',
+    '🍩','🎂','🍰','🧁','🍪','🍫','🍦','🍧',
+    '🥐','🍞','🥞','🧇','🥚','🧆','🥙','🫔',
+    '🥤','☕','🧃','🍵','🧋','🥛','🍺','🍹',
+    '🍉','🍎','🍊','🍋','🍓','🍇','🫐','🍑',
+    '🥦','🥕','🌽','🥑','🍆','🧅','🧄','🫑',
+    '🍽️','🥄','🍴','🔥','⭐','🌟','💯','🆕'
+  ] %>
+  <% foodEmojis.forEach(e => { %>
+  <button type="button"
+    onclick="(function(){ document.getElementById('<%= targetInput %>').value='<%= e %>'; document.getElementById('<%= targetPreview %>').textContent='<%= e %>'; })()"
+    class="w-8 h-8 rounded-lg hover:bg-orange-100 active:bg-orange-200 flex items-center justify-center text-lg transition-colors"
+    title="<%= e %>">
+    <%= e %>
+  </button>
+  <% }) %>
+</div>

@@ -1,0 +1,28 @@
+{
+  "name": "fast-food",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "start": "node ./bin/www",
+    "kill": "for /f \"tokens=5\" %a in ('netstat -aon ^| findstr :4000') do taskkill /PID %a /F",
+    "fresh": "npm run kill & node ./bin/www"
+  },
+  "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "connect-flash": "^0.1.1",
+    "cookie-parser": "~1.4.4",
+    "debug": "~2.6.9",
+    "dotenv": "^17.4.2",
+    "ejs": "~2.6.1",
+    "express": "~4.16.1",
+    "express-session": "^1.19.0",
+    "http-errors": "~1.6.3",
+    "method-override": "^3.0.0",
+    "morgan": "~1.9.1",
+    "qrcode": "^1.5.4",
+    "sqlite3": "^6.0.1"
+  },
+  "devDependencies": {
+    "mammoth": "^1.12.0"
+  }
+}

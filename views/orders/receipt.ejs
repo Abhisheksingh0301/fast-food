@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Receipt #<%= order.order_number %></title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      .receipt-box { box-shadow: none !important; border: none !important; max-width: 80mm !important; margin: 0 !important; }
+    }
+    @page { size: 80mm auto; margin: 4mm; }
+  </style>
+</head>
+<body class="bg-gray-100 min-h-screen flex flex-col items-center py-6 px-4">
+
+  <!-- Action buttons -->
+  <div class="no-print flex gap-3 mb-5 w-full max-w-sm">
+    <button onclick="window.print()" class="flex-1 bg-orange-500 hover:bg-orange-600 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+      🖨️ Print Receipt
+    </button>
+    <a href="/orders/new" class="flex-1 text-center bg-gray-800 hover:bg-gray-900 text-white py-2.5 rounded-xl text-sm font-semibold transition-colors">
+      + New Order
+    </a>
+    <a href="/orders" class="flex-1 text-center bg-white hover:bg-gray-50 text-gray-700 border border-gray-200 py-2.5 rounded-xl text-sm font-medium transition-colors">
+      Orders
+    </a>
+  </div>
+
+  <!-- Receipt -->
+  <div class="receipt-box bg-white rounded-2xl shadow-xl border border-gray-100 w-full max-w-sm overflow-hidden">
+    <!-- Header -->
+    <div class="bg-orange-500 text-white text-center py-5 px-4">
+      <div class="text-xl font-bold tracking-wide">🍔 FAST FOOD SHOP</div>
+      <div class="text-orange-100 text-xs mt-1">Your favorite quick bites</div>
+    </div>
+
+    <div class="p-4 space-y-3">
+      <!-- Order info -->
+      <div class="text-center border-b border-dashed border-gray-200 pb-3">
+        <div class="text-xs text-gray-500">Order Number</div>
+        <div class="font-bold text-gray-800 font-mono text-sm"><%= order.order_number %></div>
+        <div class="text-xs text-gray-400 mt-1">
+          <%= new Date(order.created_at).toLocaleString('en-IN', {day:'2-digit',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'}) %>
+        </div>
+        <% if (order.customer_name) { %>
+        <div class="text-xs text-gray-600 mt-1">👤 <%= order.customer_name %><% if (order.mobile) { %> · <%= order.mobile %><% } %></div>
+        <% } %>
+        <div class="text-xs text-gray-500 mt-1"><%= order.order_type %><% if(order.table_number) { %> · Table <%= order.table_number %><% } %></div>
+      </div>
+
+      <!-- Items -->
+      <div class="space-y-1.5">
+        <div class="flex justify-between text-xs font-semibold text-gray-500 pb-1 border-b border-gray-100">
+          <span>Item</span>
+          <span>Qty × Price = Total</span>
+        </div>
+        <% orderItems.forEach(item => { %>
+        <div class="flex justify-between text-xs">
+          <span class="text-gray-700 flex-1 pr-2"><%= item.item_name %></span>
+          <span class="text-gray-500 shrink-0"><%= item.quantity %>×₹<%= item.price.toFixed(0) %> = <span class="font-semibold text-gray-800">₹<%= item.total.toFixed(2) %></span></span>
+        </div>
+        <% }) %>
+      </div>
+
+      <!-- Totals -->
+      <div class="border-t border-dashed border-gray-200 pt-3 space-y-1">
+        <div class="flex justify-between text-xs text-gray-500">
+          <span>Subtotal</span>
+          <span>₹<%= order.subtotal.toFixed(2) %></span>
+        </div>
+        <div class="flex justify-between text-xs text-gray-500">
+          <span>GST</span>
+          <span>₹<%= order.gst.toFixed(2) %></span>
+        </div>
+        <% if (order.discount > 0) { %>
+        <div class="flex justify-between text-xs text-green-600">
+          <span>Discount</span>
+          <span>-₹<%= order.discount.toFixed(2) %></span>
+        </div>
+        <% } %>
+        <div class="flex justify-between font-bold text-gray-900 text-base border-t border-gray-200 pt-2 mt-2">
+          <span>TOTAL</span>
+          <span>₹<%= order.total.toFixed(2) %></span>
+        </div>
+      </div>
+
+      <!-- Payment -->
+      <div class="bg-gray-50 rounded-xl p-3 text-xs space-y-1">
+        <div class="flex justify-between">
+          <span class="text-gray-500">Payment</span>
+          <span class="font-semibold text-gray-700"><%= order.payment_method %></span>
+        </div>
+        <% if (order.payment_method === 'Cash' && order.cash_received) { %>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Received</span>
+          <span class="font-semibold text-gray-700">₹<%= order.cash_received.toFixed(2) %></span>
+        </div>
+        <div class="flex justify-between">
+          <span class="text-gray-500">Change</span>
+          <span class="font-bold text-green-600">₹<%= Math.max(0, order.cash_received - order.total).toFixed(2) %></span>
+        </div>
+        <% } %>
+      </div>
+
+      <!-- UPI QR Code -->
+      <% if (order.payment_method === 'UPI' && upiQrCode) { %>
+      <div class="border border-blue-100 bg-blue-50 rounded-xl p-3 text-center space-y-2">
+        <div class="text-xs font-semibold text-blue-700 uppercase tracking-wide">📱 Scan to Pay via UPI</div>
+        <img src="<%= upiQrCode %>" alt="UPI QR Code"
+          class="mx-auto rounded-lg border border-blue-200 bg-white p-1"
+          style="width:160px;height:160px;">
+        <div class="text-xs text-blue-600 font-mono font-semibold"><%= upiId %></div>
+        <div class="text-xs font-bold text-gray-800">Amount: ₹<%= order.total.toFixed(2) %></div>
+        <div class="text-xs text-gray-400">Open any UPI app and scan the QR code above</div>
+      </div>
+      <% } %>
+
+      <!-- Footer -->
+      <div class="text-center border-t border-dashed border-gray-200 pt-3">
+        <div class="text-sm font-bold text-gray-700">Thank You! 🙏</div>
+        <div class="text-xs text-gray-400 mt-1">Visit Again Soon</div>
+        <div class="text-xs text-gray-300 mt-2">★ ★ ★ ★ ★</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="no-print mt-4 text-xs text-gray-400">
+    <a href="/orders/<%= order.id %>/receipt" class="hover:text-gray-600">Order #<%= order.order_number %></a>
+  </div>
+</body>
+</html>

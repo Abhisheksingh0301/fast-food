@@ -1,0 +1,220 @@
+<%- include('../partials/head') %>
+
+<style>
+  /* Cart panel: slides up on mobile, static on desktop */
+  #cartPanel {
+    transition: transform 0.32s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  #cartBackdrop {
+    transition: opacity 0.32s ease;
+  }
+</style>
+
+<div class="flex h-screen overflow-hidden bg-gray-100">
+
+  <!-- Desktop mini-sidebar (hidden on mobile) -->
+  <aside class="hidden md:flex w-14 bg-gray-900 flex-col items-center py-3 gap-3 shrink-0 no-print">
+    <a href="/dashboard" title="Dashboard" class="w-9 h-9 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg>
+    </a>
+    <a href="/orders" title="Orders" class="w-9 h-9 bg-gray-700 hover:bg-gray-600 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+    </a>
+    <div class="flex-1"></div>
+    <a href="/logout" title="Logout" class="w-9 h-9 bg-gray-700 hover:bg-red-600 rounded-lg flex items-center justify-center text-gray-300 hover:text-white transition-colors">
+      <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"/></svg>
+    </a>
+  </aside>
+
+  <!-- Menu Panel -->
+  <div class="flex-1 flex flex-col min-w-0 overflow-hidden">
+
+    <!-- Mobile top bar -->
+    <div class="md:hidden bg-gray-900 px-4 py-2.5 flex items-center justify-between shrink-0">
+      <a href="/dashboard" class="text-gray-400 hover:text-white">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18"/></svg>
+      </a>
+      <span class="text-white text-sm font-semibold">New Order</span>
+      <button onclick="openCart()" class="relative">
+        <svg class="w-5 h-5 text-gray-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-9H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span id="cartBadge" class="hidden absolute -top-1.5 -right-1.5 min-w-[16px] h-4 bg-orange-500 text-white rounded-full text-xs font-bold flex items-center justify-center px-0.5 leading-none">0</span>
+      </button>
+    </div>
+
+    <!-- Search + Category tabs -->
+    <div class="bg-white border-b border-gray-200 px-3 md:px-4 py-2 shrink-0">
+      <div class="flex items-center gap-2 mb-2">
+        <div class="relative flex-1">
+          <svg class="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0"/></svg>
+          <input id="searchBox" type="text" placeholder="Search... (/ to focus)"
+            class="w-full pl-9 pr-4 py-2 border border-gray-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-orange-400 bg-gray-50">
+        </div>
+        <span class="hidden md:inline text-xs text-gray-500"><span id="cartCount" class="font-semibold text-gray-700">0</span> in cart</span>
+      </div>
+      <div class="flex gap-1.5 overflow-x-auto pb-0.5 no-scrollbar">
+        <button onclick="filterCategory('all')" data-cat="all"
+          class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-orange-500 text-white">All</button>
+        <% categories.forEach(c => { %>
+        <button onclick="filterCategory('<%= c.id %>')" data-cat="<%= c.id %>"
+          class="cat-tab px-3 py-1.5 rounded-lg text-xs font-semibold whitespace-nowrap bg-gray-100 text-gray-600 hover:bg-gray-200">
+          <%= c.name %>
+        </button>
+        <% }) %>
+      </div>
+    </div>
+
+    <!-- Menu items grid (pb accounts for mobile FAB bar) -->
+    <div class="flex-1 overflow-y-auto p-2 md:p-3 pb-24 md:pb-3">
+      <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-2 md:gap-2.5" id="menuGrid">
+        <% items.forEach(item => { %>
+        <button
+          onclick="addToCart({id:<%= item.id %>, name:'<%= item.name.replace(/'/g,"\\'") %>', price:<%= item.price %>, gst:<%= item.gst %>})"
+          data-cat="<%= item.category_id %>"
+          data-name="<%= item.name.toLowerCase() %>"
+          class="menu-item-card bg-white rounded-xl p-2.5 md:p-3 text-left shadow-sm border border-gray-100 hover:border-orange-300 hover:shadow-md active:scale-95 transition-all focus:outline-none focus:ring-2 focus:ring-orange-400"
+          id="card-<%= item.id %>">
+          <div class="text-xl md:text-2xl mb-1 select-none"><%= item.category_emoji || '🍽️' %></div>
+          <div class="font-semibold text-gray-800 text-xs leading-tight mb-1 line-clamp-2"><%= item.name %></div>
+          <div class="text-orange-500 font-bold text-sm">₹<%= item.price %></div>
+        </button>
+        <% }) %>
+      </div>
+      <div id="noResults" class="hidden text-center py-12 text-gray-400">No items found.</div>
+    </div>
+  </div>
+
+  <!-- ── Cart backdrop (mobile only) ── -->
+  <div id="cartBackdrop"
+    class="md:hidden fixed inset-0 bg-black/50 z-40 opacity-0 pointer-events-none"
+    onclick="closeCart()"></div>
+
+  <!-- ── Cart Panel: fixed bottom sheet on mobile, right column on desktop ── -->
+  <div id="cartPanel"
+    class="
+      fixed inset-x-0 bottom-0 z-50 flex flex-col bg-white rounded-t-2xl shadow-2xl translate-y-full overflow-hidden max-h-[92vh]
+      md:relative md:inset-auto md:translate-y-0 md:rounded-none md:shadow-none md:overflow-hidden md:max-h-full md:h-full
+      md:w-80 xl:w-96 md:border-l md:border-gray-200
+    ">
+
+    <!-- Mobile drag handle + close (single compact row) -->
+    <div class="md:hidden flex flex-col items-center px-4 pt-2 pb-1 shrink-0">
+      <div class="w-10 h-1 bg-gray-300 rounded-full mb-2"></div>
+    </div>
+
+    <!-- Cart header bar: title + clear + customer toggle -->
+    <div class="flex items-center justify-between px-4 py-2.5 bg-orange-50 border-b border-orange-100 shrink-0">
+      <div class="flex items-center gap-2">
+        <span class="font-bold text-gray-800 text-sm">Order</span>
+        <!-- Order type pill (always visible) -->
+        <select id="orderType"
+          class="border border-orange-200 bg-white rounded-full px-2 py-0.5 text-xs text-gray-600 focus:outline-none focus:ring-1 focus:ring-orange-400">
+          <option>Dine In</option>
+          <option>Take Away</option>
+        </select>
+      </div>
+      <div class="flex items-center gap-3">
+        <!-- Toggle customer details -->
+        <button onclick="toggleCustomerInfo()" id="customerToggleBtn"
+          class="text-xs text-orange-600 hover:text-orange-800 font-medium flex items-center gap-1">
+          <svg id="customerChevron" class="w-3 h-3 transition-transform duration-200" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7"/>
+          </svg>
+          Details
+        </button>
+        <button onclick="clearCart()" class="text-xs text-red-400 hover:text-red-600 font-medium">Clear</button>
+      </div>
+    </div>
+
+    <!-- Customer info (collapsed by default) -->
+    <div id="customerInfo" class="hidden px-4 py-2 border-b border-gray-100 bg-orange-50 shrink-0">
+      <div class="grid grid-cols-2 gap-1.5">
+        <input id="customerName" type="text" placeholder="Customer name"
+          class="col-span-2 border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <input id="customerMobile" type="tel" placeholder="Mobile (optional)"
+          class="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-orange-400">
+        <input id="tableNumber" type="text" placeholder="Table # (optional)"
+          class="border border-gray-200 rounded-lg px-3 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-orange-400">
+      </div>
+    </div>
+
+    <!-- Cart items list -->
+    <div class="flex-1 overflow-y-auto min-h-0">
+      <div id="emptyCart" class="flex flex-col items-center justify-center py-10 text-gray-300">
+        <svg class="w-10 h-10 mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M3 3h2l.4 2M7 13h10l4-9H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <div class="text-sm font-medium text-gray-400">Cart is empty</div>
+        <div class="text-xs mt-0.5">Tap items to add</div>
+      </div>
+      <div id="cartItems" class="divide-y divide-gray-50"></div>
+    </div>
+
+    <!-- Bill summary (compact) -->
+    <div class="border-t border-gray-100 px-4 py-2 bg-gray-50 shrink-0">
+      <div class="flex justify-between text-xs text-gray-500 mb-0.5"><span>Subtotal</span><span id="subtotalDisplay">₹0.00</span></div>
+      <div class="flex justify-between text-xs text-gray-500 mb-0.5"><span>GST</span><span id="gstDisplay">₹0.00</span></div>
+      <div class="flex items-center justify-between text-xs text-gray-500 mb-1">
+        <span>Discount ₹</span>
+        <input id="discountInput" type="number" min="0" step="1" value="0"
+          class="w-20 border border-gray-200 rounded px-2 py-0.5 text-xs text-right focus:outline-none focus:ring-1 focus:ring-orange-400">
+      </div>
+      <div class="flex justify-between font-bold text-lg text-gray-900 border-t border-gray-200 pt-1.5">
+        <span>TOTAL</span><span id="totalDisplay" class="text-orange-600">₹0.00</span>
+      </div>
+    </div>
+
+    <!-- Payment section (compact) -->
+    <div class="px-4 py-2 border-t border-gray-100 space-y-1.5 shrink-0">
+      <div class="grid grid-cols-3 gap-1.5">
+        <button onclick="setPayment('Cash')" id="pay-Cash"
+          class="pay-btn py-1.5 rounded-lg text-xs font-semibold border-2 border-green-500 bg-green-500 text-white">💵 Cash</button>
+        <button onclick="setPayment('UPI')" id="pay-UPI"
+          class="pay-btn py-1.5 rounded-lg text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600">📱 UPI</button>
+        <button onclick="setPayment('Card')" id="pay-Card"
+          class="pay-btn py-1.5 rounded-lg text-xs font-semibold border-2 border-gray-200 bg-white text-gray-600">💳 Card</button>
+      </div>
+      <div id="cashSection" class="space-y-1">
+        <div class="flex items-center gap-2">
+          <label class="text-xs text-gray-500 shrink-0">Received ₹</label>
+          <input id="cashReceived" type="number" min="0" step="1" placeholder="Amount"
+            class="flex-1 border border-gray-200 rounded-lg px-3 py-1.5 text-sm font-semibold focus:outline-none focus:ring-2 focus:ring-orange-400 text-right">
+        </div>
+        <div class="flex justify-between items-center bg-green-50 rounded-lg px-3 py-1">
+          <span class="text-xs text-gray-600">Change</span>
+          <span id="changeDisplay" class="text-sm font-bold text-green-600">₹0.00</span>
+        </div>
+        <div class="grid grid-cols-5 gap-1">
+          <button onclick="setExact()" class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1">Exact</button>
+          <button onclick="setCash(100)" class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1">₹100</button>
+          <button onclick="setCash(200)" class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1">₹200</button>
+          <button onclick="setCash(500)" class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1">₹500</button>
+          <button onclick="setCash(1000)" class="text-xs bg-gray-100 hover:bg-gray-200 rounded py-1">₹1k</button>
+        </div>
+      </div>
+      <button id="generateBillBtn" onclick="generateBill()"
+        class="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white font-bold py-3 rounded-xl text-sm transition-colors shadow-lg">
+        🧾 Generate Bill
+      </button>
+    </div>
+  </div>
+
+  <!-- Mobile FAB cart bar (hidden when cart has no items) -->
+  <div id="mobileFab" class="md:hidden fixed bottom-0 inset-x-0 p-3 z-30 pointer-events-none">
+    <button onclick="openCart()"
+      id="mobileFabBtn"
+      class="hidden w-full bg-orange-500 text-white rounded-2xl py-3.5 px-5 flex items-center justify-between shadow-xl active:scale-95 transition-all pointer-events-auto">
+      <div class="flex items-center gap-2">
+        <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-9H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"/></svg>
+        <span class="font-semibold text-sm">View Cart • <span id="fabCartCount">0</span> item(s)</span>
+      </div>
+      <span class="font-bold" id="fabCartTotal">₹0.00</span>
+    </button>
+  </div>
+
+</div>
+
+<script>
+  const ALL_ITEMS = <%- JSON.stringify(items) %>;
+  const ALL_CATEGORIES = <%- JSON.stringify(categories) %>;
+</script>
+<script src="/js/pos.js"></script>
+</body>
+</html>

@@ -1,0 +1,133 @@
+<%- include('../partials/head') %>
+<%- include('../partials/sidebar') %>
+<div class="p-6 space-y-5">
+
+  <!-- Date picker -->
+  <div class="flex items-center gap-3">
+    <form action="/reports/daily" method="GET" class="flex items-center gap-3">
+      <label class="text-sm font-medium text-gray-700">Report Date</label>
+      <input type="date" name="date" value="<%= date %>"
+        class="border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-orange-400">
+      <button type="submit" class="bg-gray-800 hover:bg-gray-900 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors">View</button>
+    </form>
+    <div class="text-sm text-gray-400">
+      <%= new Date(date).toLocaleDateString('en-IN', {weekday:'long', day:'2-digit', month:'long', year:'numeric'}) %>
+    </div>
+  </div>
+
+  <!-- Summary Cards -->
+  <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Total Orders</div>
+      <div class="text-3xl font-bold text-gray-900"><%= summary.total_orders %></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Revenue</div>
+      <div class="text-3xl font-bold text-green-600">₹<%= Math.round(summary.revenue).toLocaleString('en-IN') %></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">GST Collected</div>
+      <div class="text-3xl font-bold text-blue-600">₹<%= Math.round(summary.total_gst).toLocaleString('en-IN') %></div>
+    </div>
+    <div class="bg-white rounded-xl p-5 shadow-sm border border-gray-100">
+      <div class="text-xs text-gray-500 uppercase tracking-wide mb-1">Avg Order Value</div>
+      <div class="text-3xl font-bold text-purple-600">₹<%= Math.round(summary.avg_order).toLocaleString('en-IN') %></div>
+    </div>
+  </div>
+
+  <div class="grid grid-cols-1 lg:grid-cols-2 gap-5">
+
+    <!-- Payment Breakdown -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">Payment Breakdown</h2>
+      </div>
+      <div class="p-5">
+        <% if (paymentBreakdown.length === 0) { %>
+        <div class="text-center text-gray-400 py-6">No orders for this date</div>
+        <% } else { %>
+        <div class="space-y-3">
+          <% paymentBreakdown.forEach(p => { %>
+          <div class="flex items-center justify-between">
+            <div class="flex items-center gap-2">
+              <span class="text-lg"><%= p.payment_method === 'Cash' ? '💵' : p.payment_method === 'UPI' ? '📱' : '💳' %></span>
+              <div>
+                <div class="text-sm font-medium text-gray-700"><%= p.payment_method %></div>
+                <div class="text-xs text-gray-400"><%= p.count %> orders</div>
+              </div>
+            </div>
+            <div class="text-right">
+              <div class="font-bold text-gray-800">₹<%= p.amount.toFixed(2) %></div>
+              <% if (summary.revenue > 0) { %>
+              <div class="text-xs text-gray-400"><%= Math.round(p.amount / summary.revenue * 100) %>%</div>
+              <% } %>
+            </div>
+          </div>
+          <div class="h-2 bg-gray-100 rounded-full overflow-hidden">
+            <div class="h-full bg-orange-400 rounded-full" style="width: <%= summary.revenue > 0 ? Math.round(p.amount / summary.revenue * 100) : 0 %>%"></div>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Top Items -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">Top 10 Items</h2>
+      </div>
+      <div class="overflow-hidden">
+        <% if (topItems.length === 0) { %>
+        <div class="text-center text-gray-400 py-6">No data</div>
+        <% } else { %>
+        <table class="w-full text-sm">
+          <thead>
+            <tr class="text-xs text-gray-500 uppercase bg-gray-50">
+              <th class="text-left px-5 py-2">#</th>
+              <th class="text-left px-5 py-2">Item</th>
+              <th class="text-right px-5 py-2">Qty</th>
+              <th class="text-right px-5 py-2">Revenue</th>
+            </tr>
+          </thead>
+          <tbody class="divide-y divide-gray-50">
+            <% topItems.forEach((item, i) => { %>
+            <tr class="hover:bg-gray-50">
+              <td class="px-5 py-2 text-xs text-gray-400 font-mono"><%= i+1 %></td>
+              <td class="px-5 py-2 text-gray-700 font-medium text-xs"><%= item.item_name %></td>
+              <td class="px-5 py-2 text-right text-xs font-bold text-gray-800"><%= item.qty %></td>
+              <td class="px-5 py-2 text-right text-xs font-bold text-green-600">₹<%= item.revenue.toFixed(0) %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+        <% } %>
+      </div>
+    </div>
+
+    <!-- Hourly Breakdown -->
+    <div class="bg-white rounded-xl shadow-sm border border-gray-100 lg:col-span-2">
+      <div class="px-5 py-4 border-b border-gray-100">
+        <h2 class="font-semibold text-gray-800">Hourly Orders</h2>
+      </div>
+      <div class="p-5">
+        <% if (hourlyOrders.length === 0) { %>
+        <div class="text-center text-gray-400 py-4">No orders for this date</div>
+        <% } else { %>
+        <div class="flex gap-2 items-end h-28">
+          <% const maxCount = Math.max(...hourlyOrders.map(h => h.count)); %>
+          <% hourlyOrders.forEach(h => { %>
+          <div class="flex-1 flex flex-col items-center gap-1 min-w-0">
+            <div class="text-xs text-gray-600 font-bold"><%= h.count %></div>
+            <div class="w-full bg-orange-400 rounded-t transition-all" style="height: <%= maxCount > 0 ? Math.round(h.count / maxCount * 80) : 0 %>px; min-height: 4px;"></div>
+            <div class="text-xs text-gray-400 font-mono"><%= String(h.hour).padStart(2,'0') %>h</div>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </div>
+    </div>
+
+  </div>
+</div>
+<%- include('../partials/footer') %>
